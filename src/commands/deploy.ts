@@ -1,5 +1,29 @@
 import { Args, Command, Flags } from "@oclif/core";
 import * as fs from "fs";
+import * as FormData from "form-data";
+import * as yaml from "js-yaml";
+
+type PluginDefinition = {
+  version: number;
+  id: string;
+  name: string;
+  description: string;
+  commands: {
+    [key: string]: {
+      description: string;
+      example: string;
+      entry: string;
+      parameters: {
+        [key: string]: {
+          description: string;
+          type: string;
+          required: boolean;
+          options?: string[];
+        };
+      }[];
+    };
+  };
+};
 
 export default class Deploy extends Command {
   static description = "Deploy a plugin to the Atharo platform";
@@ -26,6 +50,18 @@ export default class Deploy extends Command {
       this.log("atharo.yaml file not found");
       return;
     }
+
+    const pluginDefinition = yaml.load(
+      fs.readFileSync(`${args.path}/atharo.yaml`, "utf8")
+    ) as PluginDefinition;
+
+    var form = new FormData();
+    form.append("files", fs.createReadStream(`${args.path}/atharo.yaml`));
+    for (const { entry } of Object.values(pluginDefinition.commands)) {
+      form.append("files", fs.createReadStream(`${args.path}/${entry}`));
+    }
+
+    form.submit("http://localhost:3000/api/developers/deploy");
 
     this.log("Deploying to Atharo...");
   }
