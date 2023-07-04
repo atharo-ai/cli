@@ -1,7 +1,7 @@
 version: 1
 name: Plugin Manager
 description: Manage your plugins, including installing and uninstalling.
-commands:
+features:
   list:
     description: List all available plugins
     example: What plugins do you have?

@@ -1,7 +1,7 @@
 version: 1
 name: Atharo Weather Demo
 description: A demo of Atharo that gets the weather
-commands:
+features:
   weather:
     description: Get the current weather in a given location
     example: What's the weather like in San Diego?

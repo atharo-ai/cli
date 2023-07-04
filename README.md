@@ -1,335 +1,94 @@
-oclif-hello-world
+Atharo CLI
 =================
 
-oclif example Hello World CLI
+Atharo CLI to build and deploy plugins.
 
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![CircleCI](https://circleci.com/gh/oclif/hello-world/tree/main.svg?style=shield)](https://circleci.com/gh/oclif/hello-world/tree/main)
-[![GitHub license](https://img.shields.io/github/license/oclif/hello-world)](https://github.com/oclif/hello-world/blob/main/LICENSE)
+# Installation
 
-<!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g atharo-cli
-$ atharo COMMAND
-running command...
-$ atharo (--version)
-atharo-cli/0.0.0 linux-x64 node-v18.16.0
-$ atharo --help [COMMAND]
-USAGE
-  $ atharo COMMAND
-...
-```
-<!-- usagestop -->
-# Commands
-<!-- commands -->
-* [`atharo hello PERSON`](#atharo-hello-person)
-* [`atharo hello world`](#atharo-hello-world)
-* [`atharo help [COMMANDS]`](#atharo-help-commands)
-* [`atharo plugins`](#atharo-plugins)
-* [`atharo plugins:install PLUGIN...`](#atharo-pluginsinstall-plugin)
-* [`atharo plugins:inspect PLUGIN...`](#atharo-pluginsinspect-plugin)
-* [`atharo plugins:install PLUGIN...`](#atharo-pluginsinstall-plugin-1)
-* [`atharo plugins:link PLUGIN`](#atharo-pluginslink-plugin)
-* [`atharo plugins:uninstall PLUGIN...`](#atharo-pluginsuninstall-plugin)
-* [`atharo plugins:uninstall PLUGIN...`](#atharo-pluginsuninstall-plugin-1)
-* [`atharo plugins:uninstall PLUGIN...`](#atharo-pluginsuninstall-plugin-2)
-* [`atharo plugins update`](#atharo-plugins-update)
+`$ npm i -g atharo-cli`
 
-## `atharo hello PERSON`
+# Building a Plugin
 
-Say hello
+To skip the explanations and just look at the code, check out the [examples](https://github.com/warent/atharo-cli/tree/main/plugins/examples).
 
-```
-USAGE
-  $ atharo hello PERSON -f <value>
+Then use `$ atharo deploy` to deploy your plugin.
 
-ARGUMENTS
-  PERSON  Person to say hello to
+## Overview
 
-FLAGS
-  -f, --from=<value>  (required) Who is saying hello
+Atharo plugins are serverless functions that add to the capabilities of ChatGPT. The details of how it works with ChatGPT are not important to build for Atharo, but more information on that is available in their [documentation](https://platform.openai.com/docs/guides/gpt/function-calling).
 
-DESCRIPTION
-  Say hello
+## Configuration
 
-EXAMPLES
-  $ oex hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+Every plugin begins with an `atharo.yaml` file, which describes what the plugin is and what its features are. We describe the plugin and its features using plain english.
+
+For example, a plugin for getting the weather might look like:
+```yml
+version: 1
+name: Atharo Weather Demo
+description: A demo of Atharo that gets the weather
+features:
+  weather:
+    description: Get the current weather in a given location
+    example: What's the weather like in San Diego?
+    entry: weather.ts
+    parameters:
+      - name: location
+        description: The location to get the weather for
+        type: string
+        required: true
+      - name: unit
+        description: The unit to use for the temperature
+        type: string
+        required: false
+        options:
+          - celsius
+          - fahrenheit
 ```
 
-_See code: [dist/commands/hello/index.ts](https://github.com/warent/atharo-cli/blob/v0.0.0/dist/commands/hello/index.ts)_
+For more about what parameters mean, read on about the "Features".
 
-## `atharo hello world`
+## Features
 
-Say hello world
+Features are coded with [Deno](https://deno.com/) and [TypeScript](https://www.typescriptlang.org/) as serverless functions. For example, a feature for getting the weather might look like:
 
-```
-USAGE
-  $ atharo hello world
+```ts
+// weather.ts
 
-DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ atharo hello world
-  hello world! (./src/commands/hello/world.ts)
-```
-
-## `atharo help [COMMANDS]`
-
-Display help for atharo.
-
-```
-USAGE
-  $ atharo help [COMMANDS] [-n]
-
-ARGUMENTS
-  COMMANDS  Command to show help for.
-
-FLAGS
-  -n, --nested-commands  Include all nested commands in the output.
-
-DESCRIPTION
-  Display help for atharo.
+type Request = {
+  location: string;
+  unit: string;
+};
+type Response = {
+  location: string;
+  unit: string;
+  temperature: number;
+  forecast: string;
+};
+export function main(request: Request): Response {
+  return {
+    ...request,
+    temperature: 77,
+    forecast: "sunny",
+  };
+}
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.2.10/src/commands/help.ts)_
+### Parameters
 
-## `atharo plugins`
+The values your function receives and returns are defined as the `parameters` of your feature in the `atharo.yaml` file.
 
-List installed plugins.
+The AI is intelligent enough to extract the necessary data from a user's plain english chat message and pass it as an object to your function.
 
-```
-USAGE
-  $ atharo plugins [--core]
+For example, we see the `location` parameter is a required string, therefore you know the AI will always provide that to your function in its request object.
 
-FLAGS
-  --core  Show core plugins.
+The paramters also define what the AI expects to receive in return. However, you do not have to define every aspect of your return object, because the AI is intelligent enough to infer what the return data means based on your description of the features.
 
-DESCRIPTION
-  List installed plugins.
+For more specific details about how ChatGPT works with functions, you can read more in their [documentation](https://platform.openai.com/docs/guides/gpt/function-calling).
 
-EXAMPLES
-  $ atharo plugins
-```
+## Deploying
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v2.4.7/src/commands/plugins/index.ts)_
+Plugins are deployed using the `$ atharo deploy` command in the directory with the `atharo.yaml` file.
 
-## `atharo plugins:install PLUGIN...`
+### How does this work?
 
-Installs a plugin into the CLI.
-
-```
-USAGE
-  $ atharo plugins:install PLUGIN...
-
-ARGUMENTS
-  PLUGIN  Plugin to install.
-
-FLAGS
-  -f, --force    Run yarn install with force flag.
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Installs a plugin into the CLI.
-  Can be installed from npm or a git url.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
-  the CLI without the need to patch and update the whole CLI.
-
-
-ALIASES
-  $ atharo plugins add
-
-EXAMPLES
-  $ atharo plugins:install myplugin 
-
-  $ atharo plugins:install https://github.com/someuser/someplugin
-
-  $ atharo plugins:install someuser/someplugin
-```
-
-## `atharo plugins:inspect PLUGIN...`
-
-Displays installation properties of a plugin.
-
-```
-USAGE
-  $ atharo plugins:inspect PLUGIN...
-
-ARGUMENTS
-  PLUGIN  [default: .] Plugin to inspect.
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Displays installation properties of a plugin.
-
-EXAMPLES
-  $ atharo plugins:inspect myplugin
-```
-
-## `atharo plugins:install PLUGIN...`
-
-Installs a plugin into the CLI.
-
-```
-USAGE
-  $ atharo plugins:install PLUGIN...
-
-ARGUMENTS
-  PLUGIN  Plugin to install.
-
-FLAGS
-  -f, --force    Run yarn install with force flag.
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Installs a plugin into the CLI.
-  Can be installed from npm or a git url.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
-  the CLI without the need to patch and update the whole CLI.
-
-
-ALIASES
-  $ atharo plugins add
-
-EXAMPLES
-  $ atharo plugins:install myplugin 
-
-  $ atharo plugins:install https://github.com/someuser/someplugin
-
-  $ atharo plugins:install someuser/someplugin
-```
-
-## `atharo plugins:link PLUGIN`
-
-Links a plugin into the CLI for development.
-
-```
-USAGE
-  $ atharo plugins:link PLUGIN
-
-ARGUMENTS
-  PATH  [default: .] path to plugin
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Links a plugin into the CLI for development.
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
-
-EXAMPLES
-  $ atharo plugins:link myplugin
-```
-
-## `atharo plugins:uninstall PLUGIN...`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ atharo plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ atharo plugins unlink
-  $ atharo plugins remove
-```
-
-## `atharo plugins:uninstall PLUGIN...`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ atharo plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ atharo plugins unlink
-  $ atharo plugins remove
-```
-
-## `atharo plugins:uninstall PLUGIN...`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ atharo plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ atharo plugins unlink
-  $ atharo plugins remove
-```
-
-## `atharo plugins update`
-
-Update installed plugins.
-
-```
-USAGE
-  $ atharo plugins update [-h] [-v]
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Update installed plugins.
-```
-<!-- commandsstop -->
+First, the command uploads all of the files in that directory to the Atharo server. The Atharo server then registers the plugin in its database so that Atharo knows about it and users can enable it. Finally, it spins up a serverless Deno function to handle those requests from Atharo as users interact with your features.
