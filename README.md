@@ -64,7 +64,7 @@ type Response = {
   temperature: number;
   forecast: string;
 };
-export function main(request: Request): Response {
+export default function main(request: Request): Response {
   return {
     ...request,
     temperature: 77,
