@@ -8,7 +8,7 @@ type PluginDefinition = {
   id: string;
   name: string;
   description: string;
-  commands: {
+  features: {
     [key: string]: {
       description: string;
       example: string;
@@ -57,7 +57,7 @@ export default class Deploy extends Command {
 
     var form = new FormData();
     form.append("files", fs.createReadStream(`${args.path}/atharo.yaml`));
-    for (const { entry } of Object.values(pluginDefinition.commands)) {
+    for (const { entry } of Object.values(pluginDefinition.features)) {
       if (!fs.existsSync(`${args.path}/${entry}`)) {
         this.log(`Command entrypoint "${entry}" not found`);
         return;
